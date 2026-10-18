@@ -29,6 +29,7 @@ Not shared with any team. Tested only in a private test group.
 - Never read or touch ~/pendientes-bot (another live bot on this box).
 - Kill processes by full path or PID, never by bare filename —
   pendientes-bot also runs a bot.py.
+- Never git push. Commit when asked; David reviews and pushes.
 
 ## Environment
 - Server davidagent, Ubuntu 26.04, ~3.4 GiB RAM shared with
