@@ -70,8 +70,8 @@ def get_status_rows():
     return [dict(row) for row in rows]
 
 
-def get_overdue_rows(threshold_hours):
-    cutoff = (datetime.now(timezone.utc) - timedelta(hours=threshold_hours)).isoformat()
+def get_overdue_rows(threshold_minutes):
+    cutoff = (datetime.now(timezone.utc) - timedelta(minutes=threshold_minutes)).isoformat()
     with _connect() as conn:
         rows = conn.execute(
             """

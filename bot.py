@@ -19,8 +19,8 @@ import storage
 load_dotenv()
 TELEGRAM_TOKEN = os.environ["TELEGRAM_TOKEN"]
 OWNER_ID = int(os.environ["OWNER_ID"])
+DIGEST_THRESHOLD_MINUTES = int(os.environ["DIGEST_THRESHOLD_MINUTES"])
 
-FOLLOWUP_HOURS = 24
 DIGEST_HOUR_UTC = 13  # 24h clock, UTC
 
 logging.basicConfig(
@@ -86,19 +86,32 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     logger.info("Sent /status to chat_id=%s with %d groups", update.effective_chat.id, len(rows))
 
 
-async def send_daily_digest(context: ContextTypes.DEFAULT_TYPE):
-    rows = storage.get_overdue_rows(FOLLOWUP_HOURS)
-    if not rows:
-        logger.info("Daily digest: nothing overdue")
+async def digest_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    chat = update.effective_chat
+    sender = update.effective_user
+    if sender is None or chat.type != ChatType.PRIVATE or sender.id != OWNER_ID:
+        logger.warning(
+            "Unauthorized /digest attempt from chat_id=%s sender_id=%s",
+            chat.id,
+            sender.id if sender else None,
+        )
         return
+    await send_daily_digest(context)
 
-    now = datetime.now(timezone.utc)
-    lines = ["Groups waiting on you:"]
-    for row in rows:
-        waiting_since = datetime.fromisoformat(row["waiting_since"])
-        lines.append(f"- {row['chat_title']}: waiting {format_timedelta(now - waiting_since)}")
-    await context.bot.send_message(chat_id=OWNER_ID, text="\n".join(lines))
-    logger.info("Sent daily digest with %d overdue groups", len(rows))
+
+async def send_daily_digest(context: ContextTypes.DEFAULT_TYPE):
+    rows = storage.get_overdue_rows(DIGEST_THRESHOLD_MINUTES)
+    if not rows:
+        text = "All clear: nothing waiting on you."
+    else:
+        now = datetime.now(timezone.utc)
+        lines = ["Groups waiting on you:"]
+        for row in rows:
+            waiting_since = datetime.fromisoformat(row["waiting_since"])
+            lines.append(f"- {row['chat_title']}: waiting {format_timedelta(now - waiting_since)}")
+        text = "\n".join(lines)
+    await context.bot.send_message(chat_id=OWNER_ID, text=text)
+    logger.info("Sent daily digest: %d overdue groups", len(rows))
 
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
@@ -126,6 +139,7 @@ def main():
         group=0,
     )
     application.add_handler(CommandHandler("status", status_command), group=1)
+    application.add_handler(CommandHandler("digest", digest_command), group=1)
     application.add_error_handler(error_handler)
 
     application.job_queue.run_daily(

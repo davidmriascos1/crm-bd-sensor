@@ -24,6 +24,8 @@ Not shared with any team. Tested only in a private test group.
 - Secrets live in .env (gitignored). Never print or log the token.
   Set the httpx logger to WARNING: its INFO lines log the full
   request URL, which embeds the bot token.
+- Never read or print .env; only append new keys, and tell David
+  which key to add if a value is needed.
 - Never read or touch ~/pendientes-bot (another live bot on this box).
 - Kill processes by full path or PID, never by bare filename —
   pendientes-bot also runs a bot.py.
