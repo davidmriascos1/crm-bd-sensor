@@ -75,9 +75,23 @@ group. Not hardened for multiple owners or large group counts.
    `OWNER_ID` is your numeric Telegram user id (not your username) —
    you can get it from a bot like @userinfobot.
 4. Add the bot to the group chats you want it to watch.
-5. Run it:
+5. Run it directly:
    ```
    python3 bot.py
+   ```
+   Or, for it to survive crashes and reboots, run it as a `systemd`
+   user service:
+   ```
+   mkdir -p ~/.config/systemd/user
+   cp crm-bd-sensor.service ~/.config/systemd/user/
+   # edit the WorkingDirectory/ExecStart paths in that copy to match
+   # your own clone location first
+   systemctl --user daemon-reload
+   systemctl --user enable --now crm-bd-sensor
+   ```
+   Logs then go to `journald` instead of stdout:
+   ```
+   journalctl --user -u crm-bd-sensor -f
    ```
 6. DM the bot `/status` or `/digest` from the `OWNER_ID` account to
    confirm it's working.

@@ -1,0 +1,13 @@
+[Unit]
+Description=CRM BD sensor bot (Telegram)
+
+[Service]
+Type=simple
+WorkingDirectory=/home/YOUR_USER/crm-bd-sensor
+ExecStart=/home/YOUR_USER/crm-bd-sensor/.venv/bin/python3 bot.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=default.target

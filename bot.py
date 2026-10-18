@@ -24,7 +24,7 @@ DIGEST_THRESHOLD_MINUTES = int(os.environ["DIGEST_THRESHOLD_MINUTES"])
 DIGEST_HOUR_UTC = 13  # 24h clock, UTC
 
 logging.basicConfig(
-    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+    format="%(levelname)s %(name)s: %(message)s",
     level=logging.INFO,
 )
 # httpx logs each request URL at INFO, which embeds the bot token.
