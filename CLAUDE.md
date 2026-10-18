@@ -22,7 +22,11 @@ Not shared with any team. Tested only in a private test group.
 - No LLM call per message.
 - SQLite + one Python process. No Docker, no dashboards, no cloud.
 - Secrets live in .env (gitignored). Never print or log the token.
+  Set the httpx logger to WARNING: its INFO lines log the full
+  request URL, which embeds the bot token.
 - Never read or touch ~/pendientes-bot (another live bot on this box).
+- Kill processes by full path or PID, never by bare filename —
+  pendientes-bot also runs a bot.py.
 
 ## Environment
 - Server davidagent, Ubuntu 26.04, ~3.4 GiB RAM shared with

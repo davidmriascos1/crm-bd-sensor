@@ -1,0 +1,16 @@
+# Decisions
+
+| Decision | Chosen | Rejected | Why |
+|---|---|---|---|
+| Telegram access | Bot API (`python-telegram-bot`) | Userbot (Telethon) | Hard rule — avoids the Telegram ToS risk of acting as a real user account. |
+| Reading `.env` | `python-dotenv` | Hand-parsed `.env` | Tiny, standard package; hand-parsing is more code for the same result. |
+| Daily digest scheduling | `JobQueue` (`python-telegram-bot[job-queue]`, `run_daily`) | Custom `asyncio.sleep` loop | `run_daily` handles calendar scheduling (midnight rollovers, DST) that a sleep loop would have to reimplement by hand. The CLAUDE.md "asyncio.sleep, never time.sleep" rule is about not blocking the event loop while pausing — it's not a mandate on which scheduler to use, and `run_daily` doesn't block either. |
+| Activity storage | One row per group, overwritten each message | Append-only message log | Hard rule is metadata-only; MVP 0 only needs "last" activity, not a history. |
+| Tracking unanswered wait time | Dedicated `waiting_since` column: set on the first unanswered non-owner message, cleared when the owner replies | Deriving wait time from `last_message_at` + `is_owner` alone | If the other side sends several follow-up messages before David replies, the clock should start at their *first* unanswered message, not reset every time they write again. |
+| Idempotent writes on restart | Conditional UPSERT: only overwrite a row when the incoming message is newer than what's stored | Unconditional UPSERT | `drop_pending_updates=False` means Telegram can redeliver updates after a restart; an unconditional overwrite could stamp a replayed old message as "now" and corrupt the wait-time math. |
+| Database path | Absolute path computed from the script's own location | Bare relative path | Hard rule — avoids breakage when run from a different working directory (e.g. under systemd later). |
+| Owner identity | `OWNER_ID` from `.env`, compared per message | Hardcoded Telegram user id in source | Keeps personal identifiers out of source control, consistent with token handling. |
+| Bot privacy mode | Disabled manually in BotFather | Default (privacy mode on) | Hard requirement for MVP 0 — with privacy mode on, the bot can't see ordinary group messages at all, only commands addressed to it. |
+| `httpx` log level | Set to `WARNING` | Leave at default (INFO, inherited from `logging.basicConfig`) | Discovered during the first live test run: `httpx`'s INFO lines log the full request URL, which embeds the bot token — a hard-rule violation that came from a dependency, not our own logging calls. |
+| Recorder scope | Exclude commands (`~filters.COMMAND`) and service messages (`~filters.StatusUpdate.ALL`) | Record every `filters.ALL` message | Discovered live: removing/re-adding the bot generated service messages that got recorded as "owner activity," and running `/status` itself would otherwise count as a reply. Neither is a real conversational turn. |
+| `/status` access | Restricted to a private chat from `OWNER_ID`; anything else logs a `WARNING` (chat id + sender id only) and is silently ignored | Answer `/status` in any chat, from anyone | `/status` lists every tracked group's last-spoke status — answering it anywhere would leak who-spoke-last on other BD relationships to whoever can reach the bot. |
